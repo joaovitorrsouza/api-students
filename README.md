@@ -1,7 +1,7 @@
 # api-students
 API to 'Golang do Zero' course students
 
-Route:
+Routes:
 - GET /students - List all students
 - POST /students - Create student
 - GET /students/:id Get infos from a especific student
