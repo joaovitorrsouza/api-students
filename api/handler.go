@@ -17,10 +17,29 @@ func (api *API) getStudents(c echo.Context) error {
 	if err != nil {
 		return c.String(http.StatusNotFound, "Failed to get students")
 	}
-	return c.JSON(http.StatusOK, students)
+
+	active := c.QueryParam("active")
+	if active != "" {
+		act, err := strconv.ParseBool(active)
+		if err != nil {
+			log.Error().Err(err).Msgf("[api] error to parse boolean")
+			return c.String(http.StatusInternalServerError, "Failed to parse boolean")
+		}
+		students, err = api.DB.GetFilteredStudent(act)
+		if err != nil {
+			log.Error().Err(err).Msgf("[api] failed to filter students by active flag")
+			return c.String(http.StatusInternalServerError, "Failed to get filtered students")
+		}
+	}
+
+	listOfStudents := map[string][]schemas.StudentResponse{
+		"students": schemas.NewResponse(students),
+	}
+	return c.JSON(http.StatusOK, listOfStudents)
 }
 
 func (api *API) getStudent(c echo.Context) error {
+
 	id, err := strconv.Atoi(c.Param("id"))
 
 	if err != nil {
@@ -60,7 +79,7 @@ func (api *API) createStudent(c echo.Context) error {
 	if err := api.DB.AddStudent(student); err != nil {
 		return c.String(http.StatusInternalServerError, "Error to create student")
 	}
-	return c.String(http.StatusOK, "Create student")
+	return c.JSON(http.StatusOK, student)
 }
 
 func (api *API) updateStudent(c echo.Context) error {
@@ -90,6 +109,7 @@ func (api *API) updateStudent(c echo.Context) error {
 }
 
 func (api *API) deleteStudent(c echo.Context) error {
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Failed to delete student")
